@@ -19,6 +19,12 @@
  */
 
 @theme inline {
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --color-navy: var(--navy);
+  --color-institutional: var(--institutional);
+  --color-gold: var(--gold);
+  --color-curtain: var(--curtain);
+  --color-ceremony-light: var(--ceremony-light);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -63,6 +69,11 @@
 
 :root {
   --radius: 0.625rem;
+  --navy: oklch(0.24 0.062 261);
+  --institutional: oklch(0.42 0.108 259);
+  --gold: oklch(0.72 0.122 88);
+  --curtain: oklch(0.31 0.132 20);
+  --ceremony-light: oklch(0.98 0.004 260);
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);

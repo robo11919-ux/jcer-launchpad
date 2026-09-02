@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ControllerRouteImport } from './routes/controller'
 import { Route as ScreenRouteImport } from './routes/screen'
 import { Route as StatusRouteImport } from './routes/status'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ControllerRoute = ControllerRouteImport.update({
+  id: '/controller',
+  path: '/controller',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ScreenRoute = ScreenRouteImport.update({
@@ -31,30 +37,34 @@ const StatusRoute = StatusRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/controller': typeof ControllerRoute
   '/screen': typeof ScreenRoute
   '/status': typeof StatusRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/controller': typeof ControllerRoute
   '/screen': typeof ScreenRoute
   '/status': typeof StatusRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/controller': typeof ControllerRoute
   '/screen': typeof ScreenRoute
   '/status': typeof StatusRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/screen' | '/status'
+  fullPaths: '/' | '/controller' | '/screen' | '/status'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/screen' | '/status'
-  id: '__root__' | '/' | '/screen' | '/status'
+  to: '/' | '/controller' | '/screen' | '/status'
+  id: '__root__' | '/' | '/controller' | '/screen' | '/status'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ControllerRoute: typeof ControllerRoute
   ScreenRoute: typeof ScreenRoute
   StatusRoute: typeof StatusRoute
 }
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/controller': {
+      id: '/controller'
+      path: '/controller'
+      fullPath: '/controller'
+      preLoaderRoute: typeof ControllerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/screen': {
@@ -87,6 +104,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ControllerRoute: ControllerRoute,
   ScreenRoute: ScreenRoute,
   StatusRoute: StatusRoute,
 }
