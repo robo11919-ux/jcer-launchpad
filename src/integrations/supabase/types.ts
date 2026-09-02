@@ -17,21 +17,21 @@ export type Database = {
       launch_control: {
         Row: {
           command: string
-          id: string
+          id: number | string
           screen_last_seen: string | null
           sequence_id: number
           updated_at: string
         }
         Insert: {
           command?: string
-          id?: string
+          id?: number | string
           screen_last_seen?: string | null
           sequence_id?: number
           updated_at?: string
         }
         Update: {
           command?: string
-          id?: string
+          id?: number | string
           screen_last_seen?: string | null
           sequence_id?: number
           updated_at?: string

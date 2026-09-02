@@ -1,29 +1,32 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AnimatePresence, motion } from "framer-motion";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Maximize2, Minimize2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
-import portalAsset from "@/assets/jcer-portal-reveal.png.asset.json";
-import { ActivationEffect } from "@/components/ceremony/ActivationEffect";
-import { Curtain } from "@/components/ceremony/Curtain";
-import { CurtainTitle } from "@/components/ceremony/CurtainTitle";
-import { LaunchOverlay } from "@/components/ceremony/LaunchOverlay";
-import { Particles } from "@/components/ceremony/Particles";
+import { RealisticCurtain } from "@/components/ceremony/RealisticCurtain";
+import { CountdownTimer } from "@/components/ceremony/CountdownTimer";
+import { FlowerPetals } from "@/components/ceremony/FlowerPetals";
+import { useLaunchSequence } from "@/hooks/useLaunchSequence";
 import { useRealtimeControl } from "@/hooks/useRealtimeControl";
-import { LIVE_ERP_URL, TIMINGS, type ScreenPhase } from "@/lib/launch";
+import { LIVE_ERP_URL } from "@/lib/launch";
+import { isBrowserFullscreen, toggleBrowserFullscreen } from "@/lib/fullscreen";
 
 export const Route = createFileRoute("/screen")({
   head: () => ({
     meta: [
-      { title: "Launch Screen | JCER Admission ERP Ceremony" },
+      { title: "Inauguration Ceremony | JCER Admission ERP" },
       {
         name: "description",
         content:
-          "Cinematic LED-screen launch experience for the official inauguration of the JCER Admission ERP System.",
+          "Official stage curtain inauguration ceremony for the JCER Admission ERP System.",
       },
-      { property: "og:title", content: "JCER Admission ERP — Official Launch Screen" },
+      {
+        property: "og:title",
+        content: "JCER Admission ERP — Official Inauguration",
+      },
       {
         property: "og:description",
-        content: "Full-screen ceremony display for the JCER Admission ERP launch.",
+        content:
+          "Auditorium theatre curtain launch display for the JCER Admission ERP.",
       },
     ],
   }),
@@ -31,142 +34,125 @@ export const Route = createFileRoute("/screen")({
 });
 
 function LaunchScreen() {
-  const [phase, setPhase] = useState<ScreenPhase>("READY");
-  const [iframeReady, setIframeReady] = useState(false);
-  const [showIframe, setShowIframe] = useState(false);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const {
+    phase,
+    isCurtainOpen,
+    isCelebrating,
+    setIframeReady,
+    startLaunch,
+    handleCurtainsFullyOpened,
+    handleCelebrationComplete,
+    reset,
+  } = useLaunchSequence();
 
-  const clearTimers = useCallback(() => {
-    timers.current.forEach(clearTimeout);
-    timers.current = [];
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Synchronize fullscreen state across all standard & vendor-prefixed browser events
+  useEffect(() => {
+    const updateFsState = () => {
+      setIsFullscreen(isBrowserFullscreen());
+    };
+
+    updateFsState();
+
+    document.addEventListener("fullscreenchange", updateFsState);
+    document.addEventListener("webkitfullscreenchange", updateFsState);
+    document.addEventListener("mozfullscreenchange", updateFsState);
+    document.addEventListener("MSFullscreenChange", updateFsState);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", updateFsState);
+      document.removeEventListener("webkitfullscreenchange", updateFsState);
+      document.removeEventListener("mozfullscreenchange", updateFsState);
+      document.removeEventListener("MSFullscreenChange", updateFsState);
+    };
   }, []);
 
-  const after = useCallback((ms: number, fn: () => void) => {
-    timers.current.push(setTimeout(fn, ms));
-  }, []);
+  // Direct user-gesture click handler for Fullscreen
+  const handleToggleFullscreen = async () => {
+    await toggleBrowserFullscreen();
+  };
 
-  const reset = useCallback(() => {
-    clearTimers();
-    setShowIframe(false);
-    setIframeReady(false);
-    setPhase("READY");
-  }, [clearTimers]);
-
-  const startLaunch = useCallback(() => {
-    clearTimers();
-    setPhase("ACTIVATING");
-
-    const tCurtain = TIMINGS.activation;
-    const tReveal = tCurtain + TIMINGS.curtain;
-    const tAnnounce = tReveal + TIMINGS.reveal;
-    const tLive = tAnnounce + TIMINGS.announcement;
-
-    after(tCurtain, () => {
-      setPhase("OPENING_CURTAIN");
-      setShowIframe(true); // begin loading live site behind the screenshot
-    });
-    after(tReveal, () => setPhase("REVEAL"));
-    after(tAnnounce, () => setPhase("OFFICIALLY_LAUNCHED"));
-    after(tLive, () => setPhase("LIVE"));
-  }, [after, clearTimers]);
-
-  const { row } = useRealtimeControl({
+  // Supabase Realtime synchronization with Sequence ID deduplication
+  useRealtimeControl({
     isScreen: true,
     onCommand: (command) => {
-      if (command === "LAUNCH") startLaunch();
-      if (command === "RESET" || command === "READY") reset();
+      if (command === "LAUNCH") {
+        startLaunch();
+      } else if (command === "RESET" || command === "READY") {
+        reset();
+      }
     },
   });
 
-  useEffect(() => clearTimers, [clearTimers]);
-
-  // Emergency keyboard backup (technical team only)
+  // Emergency keyboard shortcuts (Space to launch, R to reset, F to toggle fullscreen)
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
       if (e.code === "Space") {
         e.preventDefault();
-        if (phase === "READY") startLaunch();
+        if (phase === "READY") {
+          startLaunch();
+        }
+      } else if (e.key.toLowerCase() === "r") {
+        e.preventDefault();
+        reset();
+      } else if (e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        void toggleBrowserFullscreen();
       }
-      if (e.key.toLowerCase() === "r") reset();
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [phase, startLaunch, reset]);
 
-  // Fallback: if the live site cannot be embedded, navigate the browser to it.
-  useEffect(() => {
-    if (phase !== "LIVE") return;
-    if (iframeReady) return;
-    const t = setTimeout(() => {
-      if (!iframeReady) window.location.href = LIVE_ERP_URL;
-    }, TIMINGS.transition + 4000);
-    return () => clearTimeout(t);
-  }, [phase, iframeReady]);
-
-  const curtainOpen =
-    phase === "OPENING_CURTAIN" ||
-    phase === "REVEAL" ||
-    phase === "OFFICIALLY_LAUNCHED" ||
-    phase === "LIVE";
-
-  const liveVisible = phase === "LIVE" && iframeReady;
-
   return (
-    <main className="fixed inset-0 overflow-hidden bg-navy text-ceremony-light select-none">
-      {/* Layer 1 — live ERP website (loads hidden, fades in last) */}
-      {showIframe && (
-        <motion.iframe
-          src={LIVE_ERP_URL}
-          title="JCER Admission ERP"
-          className="absolute inset-0 h-full w-full border-0"
-          style={{ zIndex: 20 }}
-          onLoad={() => setIframeReady(true)}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: liveVisible ? 1 : 0 }}
-          transition={{ duration: TIMINGS.transition / 1000, ease: "easeInOut" }}
-        />
-      )}
+    <main className="fixed inset-0 w-screen h-screen overflow-hidden bg-black select-none font-sans cursor-default">
+      {/* Layer 1 — The Actual Live Admission ERP Website */}
+      <iframe
+        src={LIVE_ERP_URL}
+        title="JCER Admission ERP System"
+        className="absolute inset-0 h-full w-full border-0 z-10"
+        onLoad={() => setIframeReady(true)}
+        allow="fullscreen; clipboard-read; clipboard-write"
+      />
 
-      {/* Layer 2 — static portal screenshot revealed behind the curtain */}
-      <motion.div
-        className="absolute inset-0 z-10"
-        animate={{ opacity: liveVisible ? 0 : 1 }}
-        transition={{ duration: TIMINGS.transition / 1000, ease: "easeInOut" }}
+      {/* Layer 2 — Realistic Red Theatre Stage Curtains */}
+      <RealisticCurtain
+        open={isCurtainOpen}
+        onOpenComplete={handleCurtainsFullyOpened}
+      />
+
+      {/* Layer 3 — Premium 5-Second Circular Countdown Timer */}
+      <CountdownTimer active={phase === "COUNTDOWN"} />
+
+      {/* Layer 4 — Post-Reveal Elegant Flower Petals Celebration Shower */}
+      <FlowerPetals
+        active={isCelebrating}
+        onCelebrationEnd={handleCelebrationComplete}
+      />
+
+      {/* Pure Subtle Icon Fullscreen Control (Zero border/background, opacity: 0.3 -> 1 on hover) */}
+      <button
+        type="button"
+        onClick={handleToggleFullscreen}
+        aria-label={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+        title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+        className="absolute top-5 right-5 z-50 p-2 bg-transparent border-none shadow-none outline-none opacity-30 hover:opacity-100 hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer group"
       >
-        <img
-          src={portalAsset.url}
-          alt="JCER Digital Portal landing page"
-          className="h-full w-full object-cover object-top"
-          draggable={false}
-        />
-      </motion.div>
-
-      {/* Layer 3 — theatre curtains */}
-      <Curtain open={curtainOpen} />
-
-      {/* Ambient ready-state details */}
-      <AnimatePresence>
-        {phase === "READY" && (
-          <motion.div
-            key="ambient"
-            className="absolute inset-0 z-40"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <Particles />
-          </motion.div>
+        {isFullscreen ? (
+          <Minimize2 className="h-5 w-5 text-cyan-400 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]" />
+        ) : (
+          <Maximize2 className="h-5 w-5 text-cyan-400 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]" />
         )}
-      </AnimatePresence>
-
-      <CurtainTitle visible={phase === "READY"} />
-      <ActivationEffect active={phase === "ACTIVATING"} />
-      <LaunchOverlay visible={phase === "OFFICIALLY_LAUNCHED"} />
-
-      {/* Invisible diagnostics for the technical team */}
-      <span className="pointer-events-none absolute bottom-1 right-2 z-[60] text-[10px] text-white/5">
-        {phase} · seq {row?.sequence_id ?? "-"}
-      </span>
+      </button>
     </main>
   );
 }
