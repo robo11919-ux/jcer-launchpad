@@ -76,7 +76,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" },
       { title: "JCER Admission ERP — Official Launch Ceremony" },
       {
         name: "description",
@@ -84,10 +84,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Official launch ceremony system for the JCER Admission ERP at Jain College of Engineering & Research.",
       },
       { name: "author", content: "Jain College of Engineering & Research" },
+      { name: "theme-color", content: "#07111F" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "JCER Launch" },
+      { name: "application-name", content: "JCER Launch" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
+      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -99,6 +106,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "apple-touch-icon", href: "/icons/icon.svg" },
     ],
   }),
   shellComponent: RootShell,
@@ -123,6 +131,15 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  // Register PWA Service Worker on application mount
+  useEffect(() => {
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch((err) => {
+        console.warn("[PWA] ServiceWorker registration warning:", err);
+      });
+    }
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
