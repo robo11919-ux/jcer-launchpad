@@ -32,7 +32,7 @@ function StatusPage() {
     row?.command === "LAUNCH" ? "Launching / Completed" : "Ready";
 
   const rows: { label: string; value: string; ok: boolean; warn?: boolean }[] = [
-    { label: "Mobile Controller", value: "Connected", ok: true },
+    { label: "Mobile Controller", value: "Connected", ok: true, warn: false },
     {
       label: "Launch Screen",
       value: screenOnline ? "Connected" : "Waiting",
@@ -45,7 +45,7 @@ function StatusPage() {
       ok: connected,
       warn: !connected,
     },
-    { label: "Ceremony Status", value: ceremony, ok: true },
+    { label: "Ceremony Status", value: ceremony, ok: true, warn: false },
   ];
 
   return (
