@@ -14,7 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      launch_control: {
+        Row: {
+          command: string
+          id: string
+          screen_last_seen: string | null
+          sequence_id: number
+          updated_at: string
+        }
+        Insert: {
+          command?: string
+          id?: string
+          screen_last_seen?: string | null
+          sequence_id?: number
+          updated_at?: string
+        }
+        Update: {
+          command?: string
+          id?: string
+          screen_last_seen?: string | null
+          sequence_id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
